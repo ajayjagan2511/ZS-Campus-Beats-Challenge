@@ -1,0 +1,62 @@
+REPORT 1
+
+CREATE TABLE REPORT_1 AS SELECT CUSTOMER_INVOICE_INFO.Date, CUSTOMER_INVOICE_INFO.timE ,INVOICE_DETAIL.invoice_number ,
+CASE WHEN CAST(ITEM_DISCOUNTS.Discount_Percentage AS DECIMAL)>0 THEN ITEM_PRICING.price_per_unit*INVOICE_DETAIL.item_quantity*(100-CAST(ITEM_DISCOUNTS.discount_percentage as DECIMAL))/100 ELSE ITEM_PRICING.price_per_unit*INVOICE_DETAIL.item_quantity  END Bill_Amount,
+CASE WHEN CAST(ITEM_DISCOUNTS.Discount_Percentage AS DECIMAL)>0 THEN INVOICE_DETAIL.item_quantity ELSE 0  END Discounted_Items,
+CASE WHEN CUSTOMER_INVOICE_INFO.customer_loyalty_card_no LIKE 'C%' THEN "Y" ELSE "N" END Is_Customer_Loyal
+FROM CUSTOMER_INVOICE_INFO,INVOICE_DETAIL,ITEM_PRICING,ITEM_DISCOUNTS
+WHERE   CUSTOMER_INVOICE_INFO.Date=ITEM_PRICING.Date  AND INVOICE_DETAIL.Item_Number=ITEM_PRICING.Item_No AND CUSTOMER_INVOICE_INFO.Invoice_Number=INVOICE_DETAIL.Invoice_Number AND CUSTOMER_INVOICE_INFO.Date=ITEM_DISCOUNTS.Date AND ITEM_PRICING.Item_No=ITEM_DISCOUNTS.item_no
+ORDER BY CUSTOMER_INVOICE_INFO.Date
+;
+
+_____________________________________________________________________
+
+SELECT * from REPORT_1
+
+_____________________________________________________________________
+
+
+SELECT SUM(bill_amount),sum(discounted_items)
+FROM REPORT_1
+
+______________________________________________________________________
+______________________________________________________________________
+_______________________________________________________________________
+
+REPORT 2
+
+CREATE TABLE REPORT_2 AS SELECT INVOICE_DETAIL.Item_Number,CUSTOMER_INVOICE_INFO.Date,COUNT(CUSTOMER_INVOICE_INFO.Invoice_Number)"NO_OF_INVOICE",SUM(INVOICE_DETAIL.item_quantity)"QUANTITY_SOLD" ,
+CASE WHEN CAST(ITEM_DISCOUNTS.Discount_Percentage AS DECIMAL) > 0 THEN "Y" ELSE "N" END "ON_DISCOUNT"
+FROM CUSTOMER_INVOICE_INFO,INVOICE_DETAIL,ITEM_DISCOUNTS
+WHERE CUSTOMER_INVOICE_INFO.invoice_number=INVOICE_DETAIL.Invoice_Number AND CUSTOMER_INVOICE_INFO.Date=ITEM_DISCOUNTS.date AND INVOICE_DETAIL.item_number=ITEM_DISCOUNTS.Item_No
+GROUP BY INVOICE_DETAIL.item_number,CUSTOMER_INVOICE_INFO.Date
+
+_________________________________________________________________________
+
+
+SELECT * FROM report_2
+
+__________________________________________________________________________
+
+SELECT  AVG(quantity_sold)
+FROM REPORT_2
+WHERE on_discount='Y'
+
+__________________________________________________________________________
+
+SELECT  AVG(quantity_sold)
+FROM REPORT_2
+WHERE on_discount='N'
+
+__________________________________________________________________________
+
+
+CREATE TABLE AVG_CAL AS SELECT SUM(quantity_sold)"SUM_PER_DAY"
+FROM REPORT_2
+GROUP BY date
+
+__________________________________________________________________________
+ 
+
+SELECT AVG(SUM_PER_DAY)"AVERAGE_OF_ALL_DAY"
+FROM AVG_CAL
